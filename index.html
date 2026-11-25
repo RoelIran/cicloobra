@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CicloObra</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e7d32">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f7f2;--card:#fff;--tx:#1b2a1b;--mut:#5c6b5c;--bd:#d5ddd0;--pri:#2e7d32;--limpio:#f9a825;--aprov:#1e88e5;--rech:#e53935}
+@media(prefers-color-scheme:dark){:root{--bg:#121812;--card:#1c251c;--tx:#e8efe6;--mut:#9fb09f;--bd:#33423a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,sans-serif;padding-bottom:84px}
+header{background:var(--pri);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:18px;margin:0}header small{opacity:.9}
+main{padding:16px;max-width:640px;margin:auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)}
+button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:var(--pri);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+button.dan{background:var(--rech)}
+button:disabled{opacity:.45}
+.row{display:flex;gap:10px}.row>*{flex:1}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--mut);border-radius:0;font-size:12px;padding:10px 2px}
+nav button.on{color:var(--pri);border-top:3px solid var(--pri);padding-top:7px}
+.flows{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.flows button{background:var(--card);color:var(--tx);border:3px solid var(--bd);font-size:13px;padding:12px 4px}
+.flows button.on{color:#fff}
+.f-limpio{--c:var(--limpio)}.f-aprovechables{--c:var(--aprov)}.f-rechazo{--c:var(--rech)}
+.flows button.on{background:var(--c);border-color:var(--c)}
+.flows button:not(.on){border-color:var(--c)}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;color:#fff;font-size:12px;background:var(--c)}
+.item{display:flex;gap:10px;align-items:center;border-top:1px solid var(--bd);padding:8px 0;font-size:14px}
+.item img{width:44px;height:44px;object-fit:cover;border-radius:6px}
+.item .x{margin-left:auto;background:none;color:var(--rech);padding:6px}
+.big{font-size:34px;font-weight:700}
+.mut{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--bd)}td.n,th.n{text-align:right}
+.bar{height:10px;border-radius:5px;background:var(--c);margin-top:3px}
+.warn{background:#fff3cd;color:#5c4400;border-radius:8px;padding:10px;font-size:13px}
+.qrs{display:grid;gap:12px}.qrs div{text-align:center}.qrs svg{width:180px;height:180px}
+.hide{display:none}
+#rep img{max-width:32%;border-radius:6px}
+@media print{header,nav,.noprint,.card:not(#rep){display:none!important}body{background:#fff;color:#000;padding:0}.card{border:0}}
+</style>
+</head>
+<body>
+<header><h1>CicloObra</h1><small id="hd">Sin visita activa</small></header>
+<main>
+
+<section id="v-visita">
+ <div class="card">
+  <h2>Nueva visita / obra</h2>
+  <label>Obra (nombre o tipo)</label><input id="obra" placeholder="Ej.: remodelación 2 pisos">
+  <label>Dirección y distrito</label><input id="dir">
+  <div class="row"><div><label>Responsable (iniciales y cargo)</label><input id="resp" placeholder="Maestro de obra A.B."></div>
+  <div><label>Personas en la prueba</label><input id="pers" inputmode="numeric"></div></div>
+  <label>Quién registra (integrante del equipo)</label><input id="autor">
+  <button id="crear" style="width:100%;margin-top:14px">Crear visita</button>
+ </div>
+ <div class="card hide" id="inst">
+  <h2>Tiempo de instalación de la estación</h2>
+  <div class="big" id="cron">00:00</div>
+  <div class="row" style="margin-top:8px"><button id="ini">Iniciar</button><button id="det" class="sec" disabled>Detener</button></div>
+  <label>o ingresar minutos manualmente</label><input id="instMan" inputmode="decimal" placeholder="min">
+  <p class="mut">Inicia al llegar al punto de acopio y detén cuando estén los 3 sacos con señalética y QR.</p>
+ </div>
+</section>
+
+<section id="v-reg" class="hide">
+ <div id="noV" class="card hide">Primero crea o abre una visita.</div>
+ <div id="regBox">
+ <div class="card">
+  <h2>Registro por flujo</h2>
+  <div class="flows" id="flows">
+   <button class="f-limpio" data-f="limpio">Escombro limpio</button>
+   <button class="f-aprovechables" data-f="aprovechables">Aprovechables</button>
+   <button class="f-rechazo" data-f="rechazo">Rechazo</button>
+  </div>
+  <label>Peso medido en la balanza (kg)</label>
+  <input id="kg" inputmode="decimal" placeholder="Ej.: 12,5 (acepta coma)">
+  <label>Destino previsto</label><input id="dest" placeholder="Ej.: reutilización en obra / prestador autorizado">
+  <label>Foto del saco / balanza</label>
+  <input id="foto" type="file" accept="image/*" capture="environment">
+  <img id="prev" class="hide" style="width:100%;margin-top:8px;border-radius:8px">
+  <button id="add" style="width:100%;margin-top:12px">Guardar pesaje</button>
+ </div>
+ <div class="card"><h2>Pesajes de esta visita</h2><div id="lista" class="mut">Aún sin pesajes.</div></div>
+ </div>
+</section>
+
+<section id="v-cierre" class="hide">
+ <div id="noV2" class="card hide">Primero crea o abre una visita.</div>
+ <div id="cieBox">
+ <div class="card">
+  <h2>Incidencias y comentarios reales</h2>
+  <label>Error o falla (ej.: se mezcló un saco). Incluir lo que salió mal da credibilidad.</label>
+  <div class="row"><input id="errT" placeholder="Qué ocurrió"><button id="errB" class="sec" style="flex:0 0 auto">Añadir</button></div>
+  <label>Comentario textual del usuario</label>
+  <textarea id="comT" rows="2" placeholder="Cita exacta"></textarea>
+  <input id="comF" placeholder="Quién (iniciales y cargo)" style="margin-top:6px">
+  <button id="comB" class="sec" style="width:100%;margin-top:8px">Añadir comentario</button>
+  <div id="inc"></div>
+ </div>
+ <button id="gen" style="width:100%">Cerrar servicio y generar reporte</button>
+ </div>
+ <div class="card hide" id="rep"></div>
+ <div id="repAct" class="hide noprint">
+  <div class="row"><button id="shr">Compartir</button><button id="prt" class="sec">PDF / Imprimir</button></div>
+  <div class="row" style="margin-top:8px"><button id="csv" class="sec">CSV</button><button id="json" class="sec">JSON</button></div>
+ </div>
+</section>
+
+<section id="v-hist" class="hide">
+ <div class="card"><h2>Visitas guardadas en este celular</h2><div id="hl" class="mut"></div></div>
+ <button id="allCsv" class="sec" style="width:100%">Exportar todas (CSV)</button>
+</section>
+
+<section id="v-qr" class="hide">
+ <div class="card">
+  <h2>Códigos QR por flujo</h2>
+  <label>Dirección web donde está publicada la app</label>
+  <input id="base" placeholder="https://tu-usuario.github.io/cicloobra/">
+  <p class="mut">Cada QR abre la app directamente en el flujo correspondiente. Imprímelos y pégalos en cada saco.</p>
+  <div class="qrs" id="qrs"></div>
+  <button id="qrp" class="sec noprint" style="width:100%;margin-top:10px">Imprimir QR</button>
+ </div>
+</section>
+</main>
+
+<nav>
+ <button data-v="visita" class="on">Visita</button>
+ <button data-v="reg">Registro</button>
+ <button data-v="cierre">Cierre</button>
+ <button data-v="hist">Historial</button>
+ <button data-v="qr">QR</button>
+</nav>
+
+<script src="qrcode.js"></script>
+<script>
+const NOM={limpio:'Escombro limpio',aprovechables:'Aprovechables secos',rechazo:'Rechazo'};
+const $=id=>document.getElementById(id);
+let S;try{S=JSON.parse(localStorage.getItem('cicloobra')||'null')}catch(e){}
+S=S||{v:[],cur:null,v_app:'v4'};
+let flujo='limpio',fotoData=null,tm=null;
+function save(){try{localStorage.setItem('cicloobra',JSON.stringify(S))}catch(e){alert('Memoria llena: exporta y borra visitas antiguas.')}}
+const cur=()=>S.v.find(x=>x.id===S.cur);
+const num=s=>{const n=parseFloat(String(s).trim().replace(/\s/g,'').replace(',','.'));return isFinite(n)?n:null};
+const fmt=n=>(Math.round(n*100)/100).toString().replace('.',',');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fh=t=>new Date(t).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short'});
+
+function show(v){
+ ['visita','reg','cierre','hist','qr'].forEach(k=>$('v-'+k).classList.toggle('hide',k!==v));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ render();window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+function render(){
+ const c=cur();
+ $('hd').textContent=c?c.obra:'Sin visita activa';
+ $('inst').classList.toggle('hide',!c);
+ $('noV').classList.toggle('hide',!!c);$('regBox').classList.toggle('hide',!c);
+ $('noV2').classList.toggle('hide',!!c);$('cieBox').classList.toggle('hide',!c);
+ document.querySelectorAll('#flows button').forEach(b=>b.classList.toggle('on',b.dataset.f===flujo));
+ if(c){
+  $('crear').textContent='Crear otra visita';
+  const L=$('lista');
+  L.innerHTML=c.reg.length?c.reg.map((r,i)=>`<div class="item f-${r.f}"><span class="pill">${NOM[r.f]}</span><b>${fmt(r.kg)} kg</b>${r.foto?`<img src="${r.foto}">`:''}<span class="mut">${fh(r.ts)}</span><button class="x" data-i="${i}">✕</button></div>`).join(''):'Aún sin pesajes.';
+  L.querySelectorAll('.x').forEach(b=>b.onclick=()=>{if(confirm('¿Borrar este pesaje?')){c.reg.splice(+b.dataset.i,1);save();render()}});
+  $('inc').innerHTML=[...c.err.map((e,i)=>`<div class="item"><span>⚠ ${esc(e)}</span><button class="x" data-e="${i}">✕</button></div>`),
+   ...c.com.map((e,i)=>`<div class="item"><span>“${esc(e.t)}” — ${esc(e.f)}</span><button class="x" data-c="${i}">✕</button></div>`)].join('');
+  $('inc').querySelectorAll('.x').forEach(b=>b.onclick=()=>{if(b.dataset.e!=null)c.err.splice(+b.dataset.e,1);else c.com.splice(+b.dataset.c,1);save();render()});
+  if(c.instMin!=null&&!tm)$('cron').textContent=fmt(c.instMin)+' min';
+ }
+ $('hl').innerHTML=S.v.length?S.v.slice().reverse().map(v=>{const t=tot(v);return `<div class="item"><div><b>${esc(v.obra)}</b><br><span class="mut">${fh(v.ts)} · ${fmt(t.total)} kg ${v.cierre?'· cerrada':'· abierta'}</span></div><button class="x" style="color:var(--pri)" data-o="${v.id}">Abrir</button><button class="x" data-d="${v.id}">Borrar</button></div>`}).join(''):'Sin visitas.';
+ $('hl').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{S.cur=b.dataset.o;save();show('visita');loadForm()});
+ $('hl').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('¿Borrar esta visita? No se puede deshacer.')){S.v=S.v.filter(x=>x.id!==b.dataset.d);if(S.cur===b.dataset.d)S.cur=null;save();render()}});
+ if(c&&c.cierre)drawReport(c);else{$('rep').classList.add('hide');$('repAct').classList.add('hide')}
+}
+function loadForm(){const c=cur();if(!c)return;$('obra').value=c.obra;$('dir').value=c.dir;$('resp').value=c.resp;$('pers').value=c.pers;$('autor').value=c.autor}
+
+$('crear').onclick=()=>{
+ const o=$('obra').value.trim();if(!o){alert('Escribe el nombre de la obra.');return}
+ const c={id:'v'+Date.now(),ts:Date.now(),obra:o,dir:$('dir').value.trim(),resp:$('resp').value.trim(),pers:$('pers').value.trim(),autor:$('autor').value.trim(),instMin:null,reg:[],err:[],com:[],cierre:null};
+ S.v.push(c);S.cur=c.id;save();$('cron').textContent='00:00';render();
+};
+
+$('ini').onclick=()=>{const c=cur();c.instIni=Date.now();save();$('ini').disabled=true;$('det').disabled=false;
+ tm=setInterval(()=>{const s=Math.floor((Date.now()-c.instIni)/1000);$('cron').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')},500)};
+$('det').onclick=()=>{const c=cur();clearInterval(tm);tm=null;c.instMin=Math.round((Date.now()-c.instIni)/600)/100;save();$('ini').disabled=false;$('det').disabled=true;$('cron').textContent=fmt(c.instMin)+' min'};
+$('instMan').onchange=()=>{const n=num($('instMan').value);if(n!=null){cur().instMin=n;save();$('cron').textContent=fmt(n)+' min'}};
+
+document.querySelectorAll('#flows button').forEach(b=>b.onclick=()=>{flujo=b.dataset.f;render()});
+$('foto').onchange=e=>{const f=e.target.files[0];if(!f){fotoData=null;$('prev').classList.add('hide');return}
+ const img=new Image,u=URL.createObjectURL(f);img.onload=()=>{const m=800,k=Math.min(1,m/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=img.width*k;cv.height=img.height*k;cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);fotoData=cv.toDataURL('image/jpeg',.6);$('prev').src=fotoData;$('prev').classList.remove('hide');URL.revokeObjectURL(u)};img.src=u};
+$('add').onclick=()=>{const c=cur();const kg=num($('kg').value);
+ if(kg==null||kg<=0){alert('Ingresa un peso válido (acepta coma o punto).');return}
+ c.reg.push({f:flujo,kg,dest:$('dest').value.trim(),foto:fotoData,ts:Date.now()});
+ save();$('kg').value='';$('foto').value='';fotoData=null;$('prev').classList.add('hide');render()};
+
+$('errB').onclick=()=>{const t=$('errT').value.trim();if(t){cur().err.push(t);$('errT').value='';save();render()}};
+$('comB').onclick=()=>{const t=$('comT').value.trim(),f=$('comF').value.trim();if(t){cur().com.push({t,f:f||'sin identificar'});$('comT').value='';$('comF').value='';save();render()}};
+
+function tot(v){const o={limpio:0,aprovechables:0,rechazo:0};v.reg.forEach(r=>o[r.f]+=r.kg);o.total=o.limpio+o.aprovechables+o.rechazo;return o}
+$('gen').onclick=()=>{const c=cur();if(!c.reg.length){alert('Registra al menos un pesaje.');return}
+ c.cierre=Date.now();save();render();$('rep').scrollIntoView()};
+
+function metrics(c){const t=tot(c);const last=Math.max(...c.reg.map(r=>r.ts));return{t,minRep:Math.round((c.cierre-last)/600)/100}}
+function drawReport(c){
+ const {t,minRep}=metrics(c);
+ const rows=['limpio','aprovechables','rechazo'].map(f=>{const p=t.total?t[f]/t.total*100:0;
+  const dest=[...new Set(c.reg.filter(r=>r.f===f&&r.dest).map(r=>r.dest))].join('; ')||'—';
+  return `<tr class="f-${f}"><td><span class="pill">${NOM[f]}</span><div class="bar" style="width:${p}%"></div></td><td class="n">${fmt(t[f])}</td><td class="n">${fmt(p)} %</td><td>${esc(dest)}</td></tr>`}).join('');
+ const fotos=c.reg.filter(r=>r.foto).map(r=>`<img src="${r.foto}">`).join('');
+ $('rep').innerHTML=`<h2>Reporte de cierre — CicloObra</h2>
+ <p><b>${esc(c.obra)}</b><br>${esc(c.dir)}<br><span class="mut">Visita: ${fh(c.ts)} · Cierre: ${fh(c.cierre)}<br>Responsable de obra: ${esc(c.resp)||'—'} · Personas: ${esc(c.pers)||'—'}<br>Registró: ${esc(c.autor)||'—'}</span></p>
+ <table><tr><th>Flujo</th><th class="n">kg</th><th class="n">%</th><th>Destino</th></tr>${rows}<tr><th>Total</th><th class="n">${fmt(t.total)}</th><th></th><th></th></tr></table>
+ <p>Instalación de la estación: <b>${c.instMin!=null?fmt(c.instMin)+' min':'no medida'}</b><br>Último pesaje → reporte: <b>${fmt(minRep)} min</b><br>Pesajes registrados: ${c.reg.length}</p>
+ ${c.err.length?`<h2>Errores / fallas</h2><ul>${c.err.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`:''}
+ ${c.com.length?`<h2>Comentarios de usuarios</h2><ul>${c.com.map(e=>`<li>“${esc(e.t)}” — ${esc(e.f)}</li>`).join('')}</ul>`:''}
+ ${fotos?`<h2>Fotos</h2>${fotos}`:''}
+ <p class="mut">Generado por CicloObra ${S.v_app}. Datos medidos en la visita; no editados.</p>`;
+ $('rep').classList.remove('hide');$('repAct').classList.remove('hide');
+}
+function textRep(c){const {t,minRep}=metrics(c);
+ return `CicloObra — Reporte de cierre\n${c.obra} (${c.dir})\n${fh(c.ts)}\n\nEscombro limpio: ${fmt(t.limpio)} kg\nAprovechables: ${fmt(t.aprovechables)} kg\nRechazo: ${fmt(t.rechazo)} kg\nTOTAL: ${fmt(t.total)} kg\n\nInstalación: ${c.instMin!=null?fmt(c.instMin)+' min':'no medida'}\nReporte generado ${fmt(minRep)} min después del último pesaje\n`+(c.err.length?'\nFallas: '+c.err.join('; ')+'\n':'')+(c.com.length?'\nComentarios: '+c.com.map(e=>`“${e.t}” — ${e.f}`).join(' | ')+'\n':'')}
+function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
+function csvOf(list){const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+ return '﻿visita,obra,direccion,fecha,flujo,kg,destino,hora_pesaje,instalacion_min\n'+list.flatMap(c=>c.reg.map(r=>[c.id,c.obra,c.dir,fh(c.ts),NOM[r.f],r.kg,r.dest,fh(r.ts),c.instMin??''].map(q).join(','))).join('\n')}
+$('shr').onclick=()=>{const t=textRep(cur());if(navigator.share)navigator.share({title:'Reporte CicloObra',text:t}).catch(()=>{});else{navigator.clipboard?.writeText(t);alert('Reporte copiado al portapapeles.')}};
+$('prt').onclick=()=>window.print();
+$('csv').onclick=()=>dl('cicloobra_'+cur().id+'.csv',csvOf([cur()]),'text/csv');
+$('json').onclick=()=>dl('cicloobra_'+cur().id+'.json',JSON.stringify(cur(),null,1),'application/json');
+$('allCsv').onclick=()=>{if(S.v.length)dl('cicloobra_todas.csv',csvOf(S.v),'text/csv')};
+
+function drawQR(){const b=$('base').value.trim();$('qrs').innerHTML='';if(!b)return;
+ const base=b.replace(/[#?].*$/,'').replace(/\/?$/,'/');
+ for(const f of Object.keys(NOM)){const q=qrcode(0,'M');q.addData(base+'?flujo='+f);q.make();
+  const d=document.createElement('div');d.className='f-'+f;d.innerHTML=q.createSvgTag(5,0)+`<div><span class="pill">${NOM[f]}</span></div>`;$('qrs').appendChild(d)}
+ try{localStorage.setItem('cicloobra_base',b)}catch(e){}}
+try{$('base').value=localStorage.getItem('cicloobra_base')||(location.protocol.startsWith('http')?location.origin+location.pathname.replace(/[^/]*$/,''):'')}catch(e){}
+$('base').oninput=drawQR;$('qrp').onclick=()=>{document.querySelectorAll('section').forEach(s=>s.id!=='v-qr'&&s.classList.add('hide'));window.print()};
+
+// Entrada por QR: ?flujo=...
+const q=new URLSearchParams(location.search).get('flujo');
+if(q&&NOM[q]){flujo=q;show(cur()?'reg':'visita')}else show('visita');
+loadForm();drawQR();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
