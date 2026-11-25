@@ -24,7 +24,7 @@ button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:var
 button.sec{background:transparent;color:var(--pri);border:1px solid var(--pri)}
 button.dan{background:var(--rech)}
 button:disabled{opacity:.45}
-.row{display:flex;gap:10px}.row>*{flex:1}
+.row{display:flex;gap:10px;align-items:flex-end}.row>*{flex:1}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;background:none;color:var(--mut);border-radius:0;font-size:12px;padding:10px 2px}
 nav button.on{color:var(--pri);border-top:3px solid var(--pri);padding-top:7px}
@@ -58,8 +58,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
   <h2>Nueva visita / obra</h2>
   <label>Obra (nombre o tipo)</label><input id="obra" placeholder="Ej.: remodelación 2 pisos">
   <label>Dirección y distrito</label><input id="dir">
-  <div class="row"><div><label>Responsable (iniciales y cargo)</label><input id="resp" placeholder="Maestro de obra A.B."></div>
-  <div><label>Personas en la prueba</label><input id="pers" inputmode="numeric"></div></div>
+  <div class="row"><div><label>Responsable de obra</label><input id="resp" placeholder="Maestro de obra A.B."></div>
+  <div><label>N.º de personas</label><input id="pers" inputmode="numeric"></div></div>
   <label>Quién registra (integrante del equipo)</label><input id="autor">
   <button id="crear" style="width:100%;margin-top:14px">Crear visita</button>
  </div>
