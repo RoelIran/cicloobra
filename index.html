@@ -77,6 +77,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
  <div id="regBox">
  <div class="card">
   <h2>Registro por flujo</h2>
+  <button id="scan" class="sec" style="width:100%;margin-bottom:10px">📷 Escanear QR del saco</button>
+  <div id="scanBox" class="hide"><video id="vid" playsinline muted style="width:100%;border-radius:10px;background:#000"></video><button id="scanX" class="dan" style="width:100%;margin-top:6px">Cancelar</button></div>
   <div class="flows" id="flows">
    <button class="f-limpio" data-f="limpio">Escombro limpio</button>
    <button class="f-aprovechables" data-f="aprovechables">Aprovechables</button>
@@ -142,6 +144,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 </nav>
 
 <script src="qrcode.js"></script>
+<script src="jsqr.js"></script>
 <script>
 const NOM={limpio:'Escombro limpio',aprovechables:'Aprovechables secos',rechazo:'Rechazo'};
 const $=id=>document.getElementById(id);
@@ -155,7 +158,7 @@ const fmt=n=>(Math.round(n*100)/100).toString().replace('.',',');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fh=t=>new Date(t).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short'});
 
-function show(v){
+function show(v){if(typeof stopScan==='function'&&scanning)stopScan();
  ['visita','reg','cierre','hist','qr'].forEach(k=>$('v-'+k).classList.toggle('hide',k!==v));
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  render();window.scrollTo(0,0);
@@ -247,6 +250,24 @@ function drawQR(){const b=$('base').value.trim();$('qrs').innerHTML='';if(!b)ret
  try{localStorage.setItem('cicloobra_base',b)}catch(e){}}
 try{$('base').value=localStorage.getItem('cicloobra_base')||(location.protocol.startsWith('http')?location.origin+location.pathname.replace(/[^/]*$/,''):'')}catch(e){}
 $('base').oninput=drawQR;$('qrp').onclick=()=>{document.querySelectorAll('section').forEach(s=>s.id!=='v-qr'&&s.classList.add('hide'));window.print()};
+
+// Escáner de QR integrado
+let stream=null,scanning=false;
+function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('scanBox').classList.add('hide');$('scan').classList.remove('hide')}
+function onCode(txt){let f=null;try{f=new URL(txt).searchParams.get('flujo')}catch(e){}
+ if(f&&NOM[f]){flujo=f;stopScan();render();if(navigator.vibrate)navigator.vibrate(80)}}
+$('scan').onclick=async()=>{
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})}catch(e){alert('No se pudo abrir la cámara. Revisa el permiso de cámara.');return}
+ const v=$('vid');v.srcObject=stream;await v.play();$('scanBox').classList.remove('hide');$('scan').classList.add('hide');scanning=true;
+ const det=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
+ const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+ const tick=async()=>{if(!scanning)return;
+  if(v.videoWidth){try{
+   if(det){const r=await det.detect(v);if(r.length){onCode(r[0].rawValue);return}}
+   else{cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);const d=cx.getImageData(0,0,cv.width,cv.height);const c=jsQR(d.data,d.width,d.height);if(c){onCode(c.data);return}}
+  }catch(e){}}
+  setTimeout(tick,150)};tick()};
+$('scanX').onclick=stopScan;
 
 // Entrada por QR: ?flujo=...
 const q=new URLSearchParams(location.search).get('flujo');
