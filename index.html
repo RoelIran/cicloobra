@@ -56,11 +56,9 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <section id="v-visita">
  <div class="card">
   <h2>Nueva visita / obra</h2>
-  <label>Obra (nombre o tipo)</label><input id="obra" placeholder="Ej.: remodelación 2 pisos">
-  <label>Dirección y distrito</label><input id="dir">
-  <div class="row"><div><label>Responsable de obra</label><input id="resp" placeholder="Maestro de obra A.B."></div>
-  <div><label>N.º de personas</label><input id="pers" inputmode="numeric"></div></div>
-  <label>Quién registra (integrante del equipo)</label><input id="autor">
+  <label>Obra y distrito</label><input id="obra" placeholder="Ej.: Remodelación 2 pisos, SJL">
+  <div class="row"><div><label>N.º de personas</label><input id="pers" inputmode="numeric"></div>
+  <div><label>Quién registra</label><input id="autor" placeholder="Nombre"></div></div>
   <button id="crear" style="width:100%;margin-top:14px">Crear visita</button>
  </div>
  <div class="card hide" id="inst">
@@ -86,8 +84,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
   </div>
   <label>Peso medido en la balanza (kg)</label>
   <input id="kg" inputmode="decimal" placeholder="Ej.: 12,5 (acepta coma)">
-  <label>Destino previsto</label><input id="dest" placeholder="Ej.: reutilización en obra / prestador autorizado">
-  <label>Foto del saco / balanza</label>
+  <label>Foto (opcional)</label>
   <input id="foto" type="file" accept="image/*" capture="environment">
   <img id="prev" class="hide" style="width:100%;margin-top:8px;border-radius:8px">
   <button id="add" style="width:100%;margin-top:12px">Guardar pesaje</button>
@@ -99,6 +96,12 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <section id="v-cierre" class="hide">
  <div id="noV2" class="card hide">Primero crea o abre una visita.</div>
  <div id="cieBox">
+ <div class="card">
+  <h2>Destino por flujo (opcional)</h2>
+  <label>Escombro limpio</label><input class="dd" data-f="limpio" placeholder="Ej.: prestador autorizado">
+  <label>Aprovechables</label><input class="dd" data-f="aprovechables" placeholder="Ej.: reciclaje / reutilización">
+  <label>Rechazo</label><input class="dd" data-f="rechazo" placeholder="Ej.: disposición final">
+ </div>
  <div class="card">
   <h2>Incidencias y comentarios reales</h2>
   <label>Error o falla (ej.: se mezcló un saco). Incluir lo que salió mal da credibilidad.</label>
@@ -187,12 +190,12 @@ function render(){
  $('hl').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('¿Borrar esta visita? No se puede deshacer.')){S.v=S.v.filter(x=>x.id!==b.dataset.d);if(S.cur===b.dataset.d)S.cur=null;save();render()}});
  if(c&&c.cierre)drawReport(c);else{$('rep').classList.add('hide');$('repAct').classList.add('hide')}
 }
-function loadForm(){const c=cur();if(!c)return;$('obra').value=c.obra;$('dir').value=c.dir;$('resp').value=c.resp;$('pers').value=c.pers;$('autor').value=c.autor}
+function loadForm(){const c=cur();if(!c)return;$('obra').value=c.obra;$('pers').value=c.pers;$('autor').value=c.autor}
 
 $('crear').onclick=()=>{
  const o=$('obra').value.trim();if(!o){alert('Escribe el nombre de la obra.');return}
- const c={id:'v'+Date.now(),ts:Date.now(),obra:o,dir:$('dir').value.trim(),resp:$('resp').value.trim(),pers:$('pers').value.trim(),autor:$('autor').value.trim(),instMin:null,reg:[],err:[],com:[],cierre:null};
- S.v.push(c);S.cur=c.id;save();$('cron').textContent='00:00';render();
+ const c={id:'v'+Date.now(),ts:Date.now(),obra:o,dir:'',resp:'',pers:$('pers').value.trim(),autor:$('autor').value.trim(),instMin:null,reg:[],err:[],com:[],cierre:null};
+ S.v.push(c);S.cur=c.id;try{localStorage.setItem('cicloobra_autor',c.autor)}catch(e){}save();$('cron').textContent='00:00';render();
 };
 
 $('ini').onclick=()=>{const c=cur();c.instIni=Date.now();save();$('ini').disabled=true;$('det').disabled=false;
@@ -205,25 +208,25 @@ $('foto').onchange=e=>{const f=e.target.files[0];if(!f){fotoData=null;$('prev').
  const img=new Image,u=URL.createObjectURL(f);img.onload=()=>{const m=800,k=Math.min(1,m/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=img.width*k;cv.height=img.height*k;cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);fotoData=cv.toDataURL('image/jpeg',.6);$('prev').src=fotoData;$('prev').classList.remove('hide');URL.revokeObjectURL(u)};img.src=u};
 $('add').onclick=()=>{const c=cur();const kg=num($('kg').value);
  if(kg==null||kg<=0){alert('Ingresa un peso válido (acepta coma o punto).');return}
- c.reg.push({f:flujo,kg,dest:$('dest').value.trim(),foto:fotoData,ts:Date.now()});
- save();$('kg').value='';$('foto').value='';fotoData=null;$('prev').classList.add('hide');render()};
+ c.reg.push({f:flujo,kg,dest:'',foto:fotoData,ts:Date.now()});
+ save();$('kg').value='';$('kg').focus();$('foto').value='';fotoData=null;$('prev').classList.add('hide');render()};
 
 $('errB').onclick=()=>{const t=$('errT').value.trim();if(t){cur().err.push(t);$('errT').value='';save();render()}};
 $('comB').onclick=()=>{const t=$('comT').value.trim(),f=$('comF').value.trim();if(t){cur().com.push({t,f:f||'sin identificar'});$('comT').value='';$('comF').value='';save();render()}};
 
 function tot(v){const o={limpio:0,aprovechables:0,rechazo:0};v.reg.forEach(r=>o[r.f]+=r.kg);o.total=o.limpio+o.aprovechables+o.rechazo;return o}
 $('gen').onclick=()=>{const c=cur();if(!c.reg.length){alert('Registra al menos un pesaje.');return}
- c.cierre=Date.now();save();render();$('rep').scrollIntoView()};
+ c.dest={};document.querySelectorAll('.dd').forEach(i=>c.dest[i.dataset.f]=i.value.trim());c.cierre=Date.now();save();render();$('rep').scrollIntoView()};
 
 function metrics(c){const t=tot(c);const last=Math.max(...c.reg.map(r=>r.ts));return{t,minRep:Math.round((c.cierre-last)/600)/100}}
 function drawReport(c){
  const {t,minRep}=metrics(c);
  const rows=['limpio','aprovechables','rechazo'].map(f=>{const p=t.total?t[f]/t.total*100:0;
-  const dest=[...new Set(c.reg.filter(r=>r.f===f&&r.dest).map(r=>r.dest))].join('; ')||'—';
+  const dest=(c.dest&&c.dest[f])||[...new Set(c.reg.filter(r=>r.f===f&&r.dest).map(r=>r.dest))].join('; ')||'—';
   return `<tr class="f-${f}"><td><span class="pill">${NOM[f]}</span><div class="bar" style="width:${p}%"></div></td><td class="n">${fmt(t[f])}</td><td class="n">${fmt(p)} %</td><td>${esc(dest)}</td></tr>`}).join('');
  const fotos=c.reg.filter(r=>r.foto).map(r=>`<img src="${r.foto}">`).join('');
  $('rep').innerHTML=`<h2>Reporte de cierre — CicloObra</h2>
- <p><b>${esc(c.obra)}</b><br>${esc(c.dir)}<br><span class="mut">Visita: ${fh(c.ts)} · Cierre: ${fh(c.cierre)}<br>Responsable de obra: ${esc(c.resp)||'—'} · Personas: ${esc(c.pers)||'—'}<br>Registró: ${esc(c.autor)||'—'}</span></p>
+ <p><b>${esc(c.obra)}</b>${c.dir?'<br>'+esc(c.dir):''}<br><span class="mut">Visita: ${fh(c.ts)} · Cierre: ${fh(c.cierre)}<br>Personas: ${esc(c.pers)||'—'}<br>Registró: ${esc(c.autor)||'—'}</span></p>
  <table><tr><th>Flujo</th><th class="n">kg</th><th class="n">%</th><th>Destino</th></tr>${rows}<tr><th>Total</th><th class="n">${fmt(t.total)}</th><th></th><th></th></tr></table>
  <p>Instalación de la estación: <b>${c.instMin!=null?fmt(c.instMin)+' min':'no medida'}</b><br>Último pesaje → reporte: <b>${fmt(minRep)} min</b><br>Pesajes registrados: ${c.reg.length}</p>
  ${c.err.length?`<h2>Errores / fallas</h2><ul>${c.err.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`:''}
@@ -233,10 +236,10 @@ function drawReport(c){
  $('rep').classList.remove('hide');$('repAct').classList.remove('hide');
 }
 function textRep(c){const {t,minRep}=metrics(c);
- return `CicloObra — Reporte de cierre\n${c.obra} (${c.dir})\n${fh(c.ts)}\n\nEscombro limpio: ${fmt(t.limpio)} kg\nAprovechables: ${fmt(t.aprovechables)} kg\nRechazo: ${fmt(t.rechazo)} kg\nTOTAL: ${fmt(t.total)} kg\n\nInstalación: ${c.instMin!=null?fmt(c.instMin)+' min':'no medida'}\nReporte generado ${fmt(minRep)} min después del último pesaje\n`+(c.err.length?'\nFallas: '+c.err.join('; ')+'\n':'')+(c.com.length?'\nComentarios: '+c.com.map(e=>`“${e.t}” — ${e.f}`).join(' | ')+'\n':'')}
+ return `CicloObra — Reporte de cierre\n${c.obra}${c.dir?' ('+c.dir+')':''}\n${fh(c.ts)}\n\nEscombro limpio: ${fmt(t.limpio)} kg\nAprovechables: ${fmt(t.aprovechables)} kg\nRechazo: ${fmt(t.rechazo)} kg\nTOTAL: ${fmt(t.total)} kg\n\nInstalación: ${c.instMin!=null?fmt(c.instMin)+' min':'no medida'}\nReporte generado ${fmt(minRep)} min después del último pesaje\n`+(c.err.length?'\nFallas: '+c.err.join('; ')+'\n':'')+(c.com.length?'\nComentarios: '+c.com.map(e=>`“${e.t}” — ${e.f}`).join(' | ')+'\n':'')}
 function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
 function csvOf(list){const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
- return '﻿visita,obra,direccion,fecha,flujo,kg,destino,hora_pesaje,instalacion_min\n'+list.flatMap(c=>c.reg.map(r=>[c.id,c.obra,c.dir,fh(c.ts),NOM[r.f],r.kg,r.dest,fh(r.ts),c.instMin??''].map(q).join(','))).join('\n')}
+ return '﻿visita,obra,direccion,fecha,flujo,kg,destino,hora_pesaje,instalacion_min\n'+list.flatMap(c=>c.reg.map(r=>[c.id,c.obra,c.dir,fh(c.ts),NOM[r.f],r.kg,(c.dest&&c.dest[r.f])||r.dest||'',fh(r.ts),c.instMin??''].map(q).join(','))).join('\n')}
 $('shr').onclick=()=>{const t=textRep(cur());if(navigator.share)navigator.share({title:'Reporte CicloObra',text:t}).catch(()=>{});else{navigator.clipboard?.writeText(t);alert('Reporte copiado al portapapeles.')}};
 $('prt').onclick=()=>window.print();
 $('csv').onclick=()=>dl('cicloobra_'+cur().id+'.csv',csvOf([cur()]),'text/csv');
@@ -272,7 +275,7 @@ $('scanX').onclick=stopScan;
 // Entrada por QR: ?flujo=...
 const q=new URLSearchParams(location.search).get('flujo');
 if(q&&NOM[q]){flujo=q;show(cur()?'reg':'visita')}else show('visita');
-loadForm();drawQR();
+loadForm();try{if(!$('autor').value)$('autor').value=localStorage.getItem('cicloobra_autor')||''}catch(e){}drawQR();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
