@@ -201,7 +201,7 @@ $('crear').onclick=()=>{
 $('ini').onclick=()=>{const c=cur();c.instIni=Date.now();save();$('ini').disabled=true;$('det').disabled=false;
  tm=setInterval(()=>{const s=Math.floor((Date.now()-c.instIni)/1000);$('cron').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')},500)};
 $('det').onclick=()=>{const c=cur();clearInterval(tm);tm=null;c.instMin=Math.round((Date.now()-c.instIni)/600)/100;save();$('ini').disabled=false;$('det').disabled=true;$('cron').textContent=fmt(c.instMin)+' min'};
-$('instMan').onchange=()=>{const n=num($('instMan').value);if(n!=null){cur().instMin=n;save();$('cron').textContent=fmt(n)+' min'}};
+$('instMan').oninput=()=>{const n=num($('instMan').value);if(n!=null&&n>=0){cur().instMin=n;save();$('cron').textContent=fmt(n)+' min'}};
 
 document.querySelectorAll('#flows button').forEach(b=>b.onclick=()=>{flujo=b.dataset.f;render()});
 $('foto').onchange=e=>{const f=e.target.files[0];if(!f){fotoData=null;$('prev').classList.add('hide');return}
